@@ -1,0 +1,13 @@
+{
+	"autodeskProduct":	"Fusion360",
+	"type":	"addin",
+	"id":	"8269dc12-7430-4063-8c65-dc8c5391d9fe",
+	"author":	"Aleksandr Krivosheev",
+	"description":	{
+		"":	"Sprocket Gear Creator for Russian GOST"
+	},
+	"version":	"1.0.0",
+	"runOnStartup":	false,
+	"supportedOS":	"windows",
+	"editEnabled":	true
+}

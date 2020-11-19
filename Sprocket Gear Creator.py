@@ -348,8 +348,8 @@ class sprocketCommandExecuteHandler(adsk.core.CommandEventHandler):
             point_2_ap = tooth_radius - sprocket_tooth_width
             point_1_ap_steps = point_1_ap + tooth_radius
 
-            arcs.addByCenterStartSweep(adsk.core.Point3D.create(-tooth_radius/10, point_1_ap/10, 0), adsk.core.Point3D.create(0, point_1_ap/10, 0), math.pi*60/180)
-            arcs.addByCenterStartSweep(adsk.core.Point3D.create(point_2_ap/10, point_1_ap/10, 0), adsk.core.Point3D.create(-sprocket_tooth_width/10, point_1_ap/10, 0), -math.pi*60/180)
+            arcs.addByCenterStartSweep(adsk.core.Point3D.create(-tooth_radius/10, point_1_ap/10, 0), adsk.core.Point3D.create(0, point_1_ap/10, 0), math.pi*45/180)
+            arcs.addByCenterStartSweep(adsk.core.Point3D.create(point_2_ap/10, point_1_ap/10, 0), adsk.core.Point3D.create(-sprocket_tooth_width/10, point_1_ap/10, 0), -math.pi*45/180)
 
             # Линии
             lines.addByTwoPoints(adsk.core.Point3D.create(0, point_1_ap/10, 0), adsk.core.Point3D.create(0, point_1_ap_steps/10, 0))
