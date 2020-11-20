@@ -14,25 +14,35 @@ def run(context):
         ui  = app.userInterface
 
         # Переменная ­ путь к файлу параметров модели
-        spath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Source\config.csv')
+        spath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Resources\config.csv')
 
         # Создание переменной cmdDef для новой команды
-        cmdDef = ui.commandDefinitions.itemById('Sprocket')
-        if not cmdDef:
-            # Задание окна команды с указанным названием
-            cmdDef = ui.commandDefinitions.addButtonDefinition('Sprocket','Sprocket Gear Creator','')
+        cmdDef = ui.commandDefinitions.addButtonDefinition('Sprocket', 'Sprocket Gear Creator', 'Creates a spur gear component', 'Resources/Sprocket Gear Creator')
+        createPanel = ui.allToolbarPanels.itemById('SolidCreatePanel')
+        gearButton = createPanel.controls.addCommand(cmdDef)
+                
+        if context['IsApplicationStartup'] == False:
+            ui.messageBox('The "Sprocket Gear Creator" command has been added\nto the CREATE panel of the MODEL workspace.')
 
         # Создание обработчика  события выполнения команды cmdDef
         onCommandCreated = sprocketHandler()
         cmdDef.commandCreated.add(onCommandCreated)
         handlers.append(onCommandCreated)
+          
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-        # Вызов команды на выполнение
-        cmdDef.execute()
-
-        # Задание ожидания действий пользователя до завершения модуля
-        adsk.autoTerminate(False)
-
+def stop(context):
+    try:
+        createPanel = ui.allToolbarPanels.itemById('SolidCreatePanel')
+        gearButton = createPanel.controls.itemById('Sprocket')       
+        if gearButton:
+            gearButton.deleteMe()
+        
+        cmdDef = ui.commandDefinitions.itemById('Sprocket')
+        if cmdDef:
+            cmdDef.deleteMe()
     except:
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
