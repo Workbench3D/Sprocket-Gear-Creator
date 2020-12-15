@@ -5,6 +5,8 @@ import adsk.core, adsk.fusion, adsk.cam, traceback, math, os.path, csv
 
 handlers = []
 
+# errMessage = adsk.core.TextBoxCommandInput.cast(None)
+
 def run(context):
     try:
 
@@ -73,24 +75,21 @@ class sprocketHandler(adsk.core.CommandCreatedEventHandler):
             # Создание формы для указания числа зубьев звездочки
             inputs.addStringValueInput('numTeeth', 'Number of sprocket teeth', '20')
 
-            # i = True
-            # while i == True:
-            #     num_teeth = int(command.commandInputs.itemById('numTeeth').value)
-            #     if num_teeth > 10 and num_teeth <= 120:
-            #         break
-            #     else:
-            #         ui.messageBox('Number of sprocket teeth must be greater than 10 or less than 120')
-            #         break
-
             # Создание формы для указания диаметра отверстия
-            inputs.addStringValueInput('holeDiam', 'Hole diameter', '10.0')  
+            inputs.addStringValueInput('holeDiam', 'Hole diameter', '10.0') 
 
+            # Вывод сообщения об ошибке
             inputs.addTextBoxCommandInput('errMessage', '', '', 2, True)     
 
             # Создание обработчика нажатия кнопки OK в окне генератора
             onExecute = sprocketCommandExecuteHandler()
             cmd.execute.add(onExecute)
             handlers.append(onExecute)
+
+            # Создание обработчика проверки условий
+            onValidateInputs = sprocketCommandValidateInputsHandler()
+            cmd.validateInputs.add(onValidateInputs)
+            handlers.append(onValidateInputs)
 
         except:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
@@ -103,23 +102,10 @@ class sprocketCommandExecuteHandler(adsk.core.CommandEventHandler):
 
             # Получение доступа к элементам управления окна генерации звездочки
             command = args.firingEvent.sender
-            hole_diam = float(command.commandInputs.itemById('holeDiam').value)
-            num_teeth = int(command.commandInputs.itemById('numTeeth').value)
-
-            # i = True
-            # while i == True:
-            #     num_teeth = int(command.commandInputs.itemById('numTeeth').value)
-            #     if num_teeth > 10 and num_teeth <= 120:
-            #         break
-            #     else:
-            #         ui.messageBox('Number of sprocket teeth must be greater than 10 or less than 120')
-            #         break
+            hole_diam = command.commandInputs.itemById('holeDiam').value
+            num_teeth = command.commandInputs.itemById('numTeeth').value
+            type_chain = command.commandInputs.itemById ('typeChain').selectedItem.name
             
-            try:
-                type_chain = command.commandInputs.itemById ('typeChain').selectedItem.name
-            except:
-                ui.messageBox('Chain type is not selected')
-
             # Получение данных из csv файла
             try:
                 with open(spath, encoding="utf-8") as f:
@@ -143,7 +129,7 @@ class sprocketCommandExecuteHandler(adsk.core.CommandEventHandler):
         except:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-# Event handler for the validateInputs event.
+# Проверка на правильность введенных данных.
 class sprocketCommandValidateInputsHandler(adsk.core.ValidateInputsEventHandler):
     def __init__(self):
         super().__init__()
@@ -151,28 +137,74 @@ class sprocketCommandValidateInputsHandler(adsk.core.ValidateInputsEventHandler)
         try:
             eventArgs = adsk.core.ValidateInputsEventArgs.cast(args)
             
+            command = args.firingEvent.sender
+            num_teeth = command.commandInputs.itemById('numTeeth')
+            hole_diam = command.commandInputs.itemById('holeDiam')
+            type_chain = command.commandInputs.itemById ('typeChain').selectedItem
+            errMessage = command.commandInputs.itemById('errMessage')
+            
             errMessage.text = ''
 
-            # Verify that at lesat 4 teath are specified.
-            num_teeth = int(command.commandInputs.itemById('numTeeth').value)
-            # if not num_teeth:
-            #     errMessage.text = 'The number of teeth must be a whole number.'
-            #     eventArgs.areInputsValid = False
-            #     return
-            # else:    
-            #     num_teeth = int(num_teeth)
-            
-            if num_teeth < 21:
-                errMessage.text = 'The number of teeth must be 4 or more.'
+            # Проверка на требуемое число зубцов и целое число.
+            if not num_teeth.value.isdigit():
+                errMessage.text = 'The number of teeth must be a whole number.'
                 eventArgs.areInputsValid = False
                 return
-                
+            else:    
+                num_teeth = int(num_teeth.value)
+
+            if num_teeth <= 10 or num_teeth > 120:
+                errMessage.text = 'Number of sprocket teeth must be greater than 10 or less than 120.'
+                eventArgs.areInputsValid = False
+                return
+
+            # Проверка выбран тип цепи
+            if type_chain is None:
+                errMessage.text = 'Chain type is not selected.'
+                eventArgs.areInputsValid = False
+                return
+            else:
+                type_chain = type_chain.name
+
+            # Получение данных из csv файла
+            try:
+                with open(spath, encoding="utf-8") as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        if str(row[0]) == type_chain:
+                            step_chain = float(row[1])
+                            roll_diam = float(row[4])
+                        else:
+                            continue  
+            except:
+                # Инициализация переменной при ошибке чтения файла
+                ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+            # Диаметр делительной окружно­сти
+            pitch_circle_diam = step_chain/(math.sin(math.radians(180)/num_teeth))
+
+            # Радиус впадин
+            hollow_radius = 0.5025*roll_diam + 0.05
+
+            # Диаметр окружности впадин
+            hollow_circle_diam = pitch_circle_diam - 2*hollow_radius - 0.01
+
+            # Проверка на правильность размеров отверстия
+            if float(hole_diam.value) >= hollow_circle_diam:
+                errMessage.text = 'The center hole diameter is too large.'
+                eventArgs.areInputsValid = False
+                return    
+
         except:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 # Расчет и построение звездочки
 def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
     try:
+        
+        hole_diam = float(hole_diam)
+        num_teeth = int(num_teeth)
+
         # Геометрическая характеристика зацепления
         geometric_characteristic_engagement = step_chain/roll_diam
 
