@@ -155,21 +155,21 @@ class sprocketCommandValidateInputsHandler(
             eventArgs = adsk.core.ValidateInputsEventArgs.cast(args)
             
             command = args.firingEvent.sender.commandInputs
-            num_teeth = command.itemById('numTeeth')
-            hole_diam = command.itemById('holeDiam')
+            num_teeth = command.itemById('numTeeth').value
+            hole_diam = command.itemById('holeDiam').value
             type_chain = command.itemById ('typeChain').selectedItem
             errMessage = command.itemById('errMessage')
             
             errMessage.text = ''
 
             # Проверка на требуемое число зубцов и целое число.
-            if not num_teeth.value.isdigit():
+            if not num_teeth.isdigit():
                 errMessage.text = 'The number of teeth must be a \
                                 whole number.'
                 eventArgs.areInputsValid = False
                 return
             else:    
-                num_teeth = int(num_teeth.value)
+                num_teeth = int(num_teeth)
 
             if num_teeth <= 10 or num_teeth > 120:
                 errMessage.text = 'Number of sprocket teeth must be \
@@ -210,7 +210,7 @@ class sprocketCommandValidateInputsHandler(
             hollow_circle_diam = pitch_circle_diam - 2*hollow_radius - 0.01
 
             # Проверка на правильность размеров отверстия
-            if float(hole_diam.value) >= hollow_circle_diam:
+            if float(hole_diam) >= hollow_circle_diam:
                 errMessage.text = 'The center hole diameter is too large.'
                 eventArgs.areInputsValid = False
                 return    
@@ -225,13 +225,22 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         point = adsk.core.Point3D
         hole_diam = float(hole_diam)/20
         num_teeth = int(num_teeth)
+        pi = math.pi
+
+        def cos(x):
+            return math.cos(x)
+
+        def sin(x):
+            return math.sin(x)
+    
+        def radians(x):
+            return math.radians(x)
 
         # Геометрическая характеристика зацепления
         geometric_characteristic_engagement = step_chain/roll_diam
 
         # Диаметр делительной окружно­сти
-        pitch_circle_diam = (step_chain/(math.sin(math.radians(180)/
-                            num_teeth)))
+        pitch_circle_diam = (step_chain/(sin(pi/num_teeth)))
 
         # Диаметр окружности выступов
         if (geometric_characteristic_engagement >= 1.4 
@@ -250,8 +259,7 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
             and geometric_characteristic_engagement < 2.0):
             K = 0.565
         
-        circle_protrusions_diam = (step_chain*(K 
-                                    + 1/math.tan(math.radians(180)
+        circle_protrusions_diam = (step_chain*(K + 1/math.tan(pi
                                     /num_teeth)))
 
         # Радиус впадин
@@ -261,7 +269,7 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         hollow_circle_diam = pitch_circle_diam - 2*hollow_radius 
 
         # Наибольшая хорда
-        # largest_chord = (pitch_circle_diam*(math.cos(math.radians(90)
+        # largest_chord = (pitch_circle_diam*(cos(radians(90)
         #                   /num_teeth)) - 2*hollow_radius)
 
         # Радиус сопряжения
@@ -278,25 +286,25 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
 
         # Радиус головки зуба
         # tooth_head_radius = (roll_diam*(1.24
-        #                      *(math.cos(math.radians(half_angle_tooth))) 
-        #                      + 0.8*(math.cos(math.radians(mating_angle))) 
+        #                      *(cos(radians(half_angle_tooth))) 
+        #                      + 0.8*(cos(radians(mating_angle))) 
         #                      - 1.3025) - 0.05)
 
         # Прямой участок профиля
         straight_section_profile = (roll_diam*(1.24
-                                *(math.sin(math.radians(half_angle_tooth))) 
-                                - 0.8*(math.sin(math.radians(mating_angle)))))
+                                *(sin(radians(half_angle_tooth))) 
+                                - 0.8*(sin(radians(mating_angle)))))
 
         # Расстояние от центра дуги впадины до центра дуги головки зуба
         # distance_cavity_arch_tooth = 1.24*roll_diam
 
         # Координаты точки О1
-        point_x_1 = 0.08*roll_diam*math.sin(math.radians(half_angle_hollow))
-        point_y_1 = 0.08*roll_diam*math.cos(math.radians(half_angle_hollow))
+        point_x_1 = 0.08*roll_diam*sin(radians(half_angle_hollow))
+        point_y_1 = 0.08*roll_diam*cos(radians(half_angle_hollow))
 
         # Координаты точки О2
-        point_x_2 = 0.124*roll_diam*math.cos(math.radians(180)/num_teeth)	
-        point_y_2 = 0.124*roll_diam*math.sin(math.radians(180)/num_teeth)
+        point_x_2 = 0.124*roll_diam*cos(pi/num_teeth)	
+        point_y_2 = 0.124*roll_diam*sin(pi/num_teeth)
 
         # Ширина зуба звездочки
         sprocket_tooth_width = 0.093*width_chain - 0.015
@@ -316,10 +324,9 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         point_y_o = pitch_circle_diam/20 
 
         # Координаты точки E
-        point_x_e = (-math.cos(math.radians(90 - half_angle_hollow))
-                    *hollow_radius/10)
+        point_x_e = (-cos(radians(90 - half_angle_hollow))*hollow_radius/10)
         point_y_e = ((hollow_circle_diam/2 + hollow_radius 
-                    - math.sin(math.radians(90 - half_angle_hollow))
+                    - sin(radians(90 - half_angle_hollow))
                     *hollow_radius)/10)
 
         # Координаты точки O1
@@ -327,40 +334,37 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         point_y_o1 = point_y_1 + pitch_circle_diam/20
 
         # Координаты точки F
-        point_x_f = (-math.cos(math.radians(90 - mating_angle 
+        point_x_f = (-cos(radians(90 - mating_angle 
                     - half_angle_hollow))*fillet_radius/10 + point_x_o1)
         point_y_f = (pitch_circle_diam/20 + point_y_1 
-                    - math.sin(math.radians(90 - mating_angle 
+                    - sin(radians(90 - mating_angle 
                     - half_angle_hollow))*fillet_radius/10)
 
         # Координаты точки G
-        point_x_g = (-math.sin(math.radians(180/num_teeth 
-                    + half_angle_tooth))*straight_section_profile/10 
-                    + point_x_f)
-        point_y_g = (math.cos(math.radians(180/num_teeth 
-                    + half_angle_tooth))*straight_section_profile/10 
-                    + point_y_f)
+        point_x_g = (-sin(radians(180/num_teeth + half_angle_tooth))
+                    *straight_section_profile/10 + point_x_f)
+        point_y_g = (cos(radians(180/num_teeth + half_angle_tooth))
+                    *straight_section_profile/10 + point_y_f)
 
         # Координаты точки O2
         point_x_o2 = -point_x_2
         point_y_o2 = pitch_circle_diam /20 - point_y_2
 
         # Координаты точки B
-        point_x_b = (-math.sin(math.radians(180/num_teeth))
-                    *circle_protrusions_diam/20)
-        point_y_b = (math.cos(math.radians(180/num_teeth))
-                    *circle_protrusions_diam/20)
+        point_x_b = (-sin(radians(180/num_teeth))*circle_protrusions_diam/20)
+        point_y_b = (cos(radians(180/num_teeth))*circle_protrusions_diam/20)
 
         # Координаты точки C
-        point_x_c = (-math.sin(math.radians(180/num_teeth))
-                    *hollow_circle_diam/20)
-        point_y_c = (math.cos(math.radians(180/num_teeth))
-                    *hollow_circle_diam/20)
+        point_x_c = (-sin(radians(180/num_teeth))*hollow_circle_diam/20)
+        point_y_c = (cos(radians(180/num_teeth))*hollow_circle_diam/20)
 
         # Получение доступа к корневому компоненту модели           
         design=app.activeProduct
         design.designType=adsk.fusion.DesignTypes.ParametricDesignType
         rootComp = design.rootComponent
+
+        # Выбор типа операции вращение, выдавливание и тд.
+        operation = adsk.fusion.FeatureOperations
 
         # Создание переменной для коллекции эскизов модели
         sketches = rootComp.sketches
@@ -372,8 +376,8 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         circles = Sketch1.sketchCurves.sketchCircles
 
         # Создание эскизной окружности впадин
-        circles.addByCenterRadius(
-            point.create(0,0,0), hollow_circle_diam/20.0)
+        circles.addByCenterRadius(point.create(0,0,0), 
+                                hollow_circle_diam/20.0)
 
         # Создание эскизной окружно­сти отверстия
         circles.addByCenterRadius(point.create(0,0,0), hole_diam)
@@ -382,8 +386,8 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         profile1 = Sketch1.profiles.item(0) 
 
         extrudes = rootComp.features.extrudeFeatures
-        extInput = extrudes.createInput(
-            profile1, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        extInput = extrudes.createInput(profile1, 
+                                        operation.NewBodyFeatureOperation)
 
         # Выдавливание окружности на ширину зуба звездочки 
         distance = adsk.core.ValueInput.createByReal(sprocket_tooth_width)
@@ -402,46 +406,44 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
         lines = Sketch2.sketchCurves.sketchLines
 
         # Дуга AE
-        arcs.addByCenterStartSweep(
-            point.create(0, point_y_o, 0), point.create(0, point_y_a, 0),
-            -math.pi*half_angle_hollow/180)
+        arcs.addByCenterStartSweep(point.create(0, point_y_o, 0), 
+                                    point.create(0, point_y_a, 0),
+                                    -pi*half_angle_hollow/180)
 
         # Дуга EF
-        arcs.addByCenterStartSweep(
-            point.create(point_x_o1, point_y_o1, 0), point.create(point_x_e, 
-            point_y_e, 0), -math.pi*mating_angle/180)  
+        arcs.addByCenterStartSweep(point.create(point_x_o1, point_y_o1, 0), 
+                                    point.create(point_x_e, point_y_e, 0), 
+                                    -pi*mating_angle/180)  
 
         # Линия FG
-        lines.addByTwoPoints(
-            point.create(point_x_f, point_y_f, 0), 
-            point.create(point_x_g, point_y_g, 0))
+        lines.addByTwoPoints(point.create(point_x_f, point_y_f, 0), 
+                            point.create(point_x_g, point_y_g, 0))
 
         # Дуга GK
-        arcs.addByCenterStartSweep(
-            point.create(point_x_o2, point_y_o2, 0), 
-            point.create(point_x_g, point_y_g, 0), math.pi*40/180)
+        arcs.addByCenterStartSweep(point.create(point_x_o2, point_y_o2, 0), 
+                                point.create(point_x_g, point_y_g, 0), 
+                                pi*40/180)
 
         # Дуга BK
-        arcs.addByCenterStartSweep(
-            point.create(0,0,0), point.create(point_x_b, point_y_b, 0), 
-            -math.pi/(num_teeth*2))
+        arcs.addByCenterStartSweep(point.create(0,0,0), 
+                                    point.create(point_x_b, point_y_b, 0), 
+                                    -pi/(num_teeth*2))
 
         # Дуга AC
-        arcs.addByCenterStartSweep(
-            point.create(0,0,0), point.create(0, point_y_a, 0), 
-            math.pi/num_teeth)
+        arcs.addByCenterStartSweep(point.create(0,0,0), 
+                                point.create(0, point_y_a, 0), 
+                                pi/num_teeth)
 
         # Линия BC
-        lines.addByTwoPoints(
-            point.create(point_x_b, point_y_b, 0), 
-            point.create(point_x_c, point_y_c, 0))
+        lines.addByTwoPoints(point.create(point_x_b, point_y_b, 0), 
+                            point.create(point_x_c, point_y_c, 0))
 
         # Сохранение эскизной окружности как первого профиля
         profile2 = Sketch2.profiles.item(0) 
 
         extrudes = rootComp.features.extrudeFeatures
-        extInput = extrudes.createInput(
-            profile2, adsk.fusion.FeatureOperations.JoinFeatureOperation)
+        extInput = extrudes.createInput(profile2, 
+                                        operation.JoinFeatureOperation)
 
         # Выдавливание профиля зуба на ширину зуба звездочки.
         distance = adsk.core.ValueInput.createByReal(sprocket_tooth_width)
@@ -461,46 +463,44 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
 
         # Создаем зеркальный эскиз
         # Дуга -AE
-        arcs.addByCenterStartSweep(
-            point.create(0, point_y_o, 0), point.create(0, point_y_a, 0), 
-            math.pi*half_angle_hollow/180)
+        arcs.addByCenterStartSweep(point.create(0, point_y_o, 0), 
+                                    point.create(0, point_y_a, 0), 
+                                    pi*half_angle_hollow/180)
 
         # Дуга -EF
-        arcs.addByCenterStartSweep(
-            point.create(-point_x_o1, point_y_o1, 0), 
-            point.create(-point_x_e, point_y_e, 0), math.pi*mating_angle/180)  
+        arcs.addByCenterStartSweep(point.create(-point_x_o1, point_y_o1, 0), 
+                                    point.create(-point_x_e, point_y_e, 0), 
+                                    pi*mating_angle/180)  
 
         # Линия -FG
-        lines.addByTwoPoints(
-            point.create(-point_x_f, point_y_f, 0), 
-            point.create(-point_x_g, point_y_g, 0))
+        lines.addByTwoPoints(point.create(-point_x_f, point_y_f, 0), 
+                            point.create(-point_x_g, point_y_g, 0))
 
         # Дуга -GK
-        arcs.addByCenterStartSweep(
-            point.create(-point_x_o2, point_y_o2, 0), 
-            point.create(-point_x_g, point_y_g, 0), -math.pi*40/180)
+        arcs.addByCenterStartSweep(point.create(-point_x_o2, point_y_o2, 0), 
+                                    point.create(-point_x_g, point_y_g, 0), 
+                                    -pi*40/180)
 
         # Дуга -BK
-        arcs.addByCenterStartSweep(
-            point.create(0,0,0), point.create(-point_x_b, point_y_b, 0), 
-            math.pi/(num_teeth*2))
+        arcs.addByCenterStartSweep(point.create(0,0,0), 
+                                    point.create(-point_x_b, point_y_b, 0), 
+                                    pi/(num_teeth*2))
 
         # Дуга -AC
-        arcs.addByCenterStartSweep(
-            point.create(0,0,0),point.create(0, point_y_a, 0), 
-            -math.pi/num_teeth)
+        arcs.addByCenterStartSweep(point.create(0,0,0),
+                                    point.create(0, point_y_a, 0), 
+                                    -pi/num_teeth)
 
         # Линия -BC
-        lines.addByTwoPoints(
-            point.create(-point_x_b, point_y_b, 0), 
-            point.create(-point_x_c, point_y_c, 0))
+        lines.addByTwoPoints(point.create(-point_x_b, point_y_b, 0), 
+                            point.create(-point_x_c, point_y_c, 0))
 
         # Сохранение эскизной окружности как первого профиля
         profile3 = Sketch3.profiles.item(0) 
 
         extrudes = rootComp.features.extrudeFeatures
-        extInput = extrudes.createInput(
-            profile3, adsk.fusion.FeatureOperations.JoinFeatureOperation)
+        extInput = extrudes.createInput(profile3, 
+                                        operation.JoinFeatureOperation)
 
         # Выдавливание профиля зуба на ширину зуба звездочки
         distance = adsk.core.ValueInput.createByReal(sprocket_tooth_width)
@@ -541,16 +541,16 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
 
         arcs.addByCenterStartSweep(
             point.create(-tooth_radius/10, point_1_ap, 0), 
-            point.create(0, point_1_ap, 0), math.pi*arc_angle/180)
+            point.create(0, point_1_ap, 0), 
+            pi*arc_angle/180)
         arcs.addByCenterStartSweep(
             point.create(point_2_ap, point_1_ap, 0), 
             point.create(-sprocket_tooth_width-0.0001, point_1_ap, 0), 
-            -math.pi*arc_angle/180)
+            -pi*arc_angle/180)
 
         # Линии
-        lines.addByTwoPoints(
-            point.create(0, point_1_ap, 0), 
-            point.create(0, point_1_ap_steps, 0))
+        lines.addByTwoPoints(point.create(0, point_1_ap, 0), 
+                            point.create(0, point_1_ap_steps, 0))
         lines.addByTwoPoints(
             point.create(-sprocket_tooth_width-0.0001, point_1_ap, 0), 
             point.create(-sprocket_tooth_width-0.0001, point_1_ap_steps, 0))
@@ -568,13 +568,13 @@ def drawSprocket(hole_diam, num_teeth, step_chain, width_chain, roll_diam):
 
         # Создание операции вырез вращением
         revolves = rootComp.features.revolveFeatures
-        revInput = revolves.createInput(
-            prof, AxisLine, 
-            adsk.fusion.FeatureOperations.CutFeatureOperation)
+        revInput = revolves.createInput(prof, 
+                                        AxisLine, 
+                                        operation.CutFeatureOperation)
 
         # Указание дистанции вращения
         # Вращение осуществить на полный оборот
-        angle = adsk.core.ValueInput.createByReal(2*math.pi)
+        angle = adsk.core.ValueInput.createByReal(2*pi)
         revInput.setAngleExtent(False, angle)
 
         # Создание вращения
