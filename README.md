@@ -1,4 +1,4 @@
-#Sprocket Gear Creator
+# Sprocket Gear Creator
 Приложение для продукта Autodesk Fusion 360.
 
 Приложение предназначено для моделирования звездочки однорядной роликовой цепи
