@@ -13,6 +13,8 @@
 
 <img src= "https://autodesk-exchange-apps-v-1-5-staging.s3.amazonaws.com/data/content/files/images/2JYWKXEM7V69/7664014020802163608/original_234bc445-876d-42bd-be1e-ae0d8834fdaf_.png" width = "503" height = "325" > 
 
+![Gear Creator Medium Gif](https://raw.githubusercontent.com/Workbench3D/Sprocket-Gear-Creator/main/info/Gear%20creator.gif)
+
 ## Запуск приложения 
 
 Установите с официального сайта Autodesk программу Fusion 360, ссылка на продукт 
